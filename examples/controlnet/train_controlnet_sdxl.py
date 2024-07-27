@@ -638,11 +638,18 @@ def get_train_dataset(args, accelerator):
     # download the dataset.
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        dataset = load_dataset(
-            args.dataset_name,
+        try:
+            dataset = load_dataset(
+                args.dataset_name,
             args.dataset_config_name,
             cache_dir=args.cache_dir,
         )
+        except Exception as e:
+            print('Using Local Dataset')
+            dataset = load_dataset(
+                'csv',
+                data_files=args.dataset_name,
+            )
     else:
         if args.train_data_dir is not None:
             dataset = load_dataset(
@@ -754,10 +761,12 @@ def prepare_train_dataset(dataset, accelerator):
     )
 
     def preprocess_train(examples):
-        images = [image.convert("RGB") for image in examples[args.image_column]]
+        from PIL import Image
+        # images = [image.convert("RGB") for image in examples[args.image_column]]
+        images = [Image.open(image).convert("RGB") for image in examples[args.image_column]]
         images = [image_transforms(image) for image in images]
 
-        conditioning_images = [image.convert("RGB") for image in examples[args.conditioning_image_column]]
+        conditioning_images = [Image.open(image).convert("RGB") for image in examples[args.conditioning_image_column]]
         conditioning_images = [conditioning_image_transforms(image) for image in conditioning_images]
 
         examples["pixel_values"] = images
