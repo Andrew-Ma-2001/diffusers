@@ -176,3 +176,12 @@ tags
 
 # wandb
 wandb
+
+output/
+*.safetensors
+*.pth
+*.bin
+*.pt
+*.zip
+examples/controlnet/one_plane_label/
+examples/controlnet/plane/
