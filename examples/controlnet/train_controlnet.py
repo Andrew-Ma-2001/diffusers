@@ -55,6 +55,8 @@ from diffusers.utils.hub_utils import load_or_create_model_card, populate_model_
 from diffusers.utils.import_utils import is_xformers_available
 from diffusers.utils.torch_utils import is_compiled_module
 
+import os
+os.environ['CURL_CA_BUNDLE'] = ''
 
 if is_wandb_available():
     import wandb
@@ -611,11 +613,19 @@ def make_train_dataset(args, tokenizer, accelerator):
     # download the dataset.
     if args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        dataset = load_dataset(
-            args.dataset_name,
+        try:
+            dataset = load_dataset(
+                args.dataset_name,
             args.dataset_config_name,
             cache_dir=args.cache_dir,
         )
+        except Exception as e:
+            print('Using Local Dataset')
+            # breakpoint()
+            dataset = load_dataset(
+                'csv',
+                data_files=args.dataset_name,
+            )
     else:
         if args.train_data_dir is not None:
             dataset = load_dataset(
@@ -628,7 +638,7 @@ def make_train_dataset(args, tokenizer, accelerator):
     # Preprocessing the datasets.
     # We need to tokenize inputs and targets.
     column_names = dataset["train"].column_names
-
+    # breakpoint()
     # 6. Get the column names for input/target.
     if args.image_column is None:
         image_column = column_names[0]
@@ -697,10 +707,10 @@ def make_train_dataset(args, tokenizer, accelerator):
     )
 
     def preprocess_train(examples):
-        images = [image.convert("RGB") for image in examples[image_column]]
+        images = [Image.open(image).convert("RGB") for image in examples[image_column]]
         images = [image_transforms(image) for image in images]
 
-        conditioning_images = [image.convert("RGB") for image in examples[conditioning_image_column]]
+        conditioning_images = [Image.open(image).convert("RGB") for image in examples[conditioning_image_column]]
         conditioning_images = [conditioning_image_transforms(image) for image in conditioning_images]
 
         examples["pixel_values"] = images

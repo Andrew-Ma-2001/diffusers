@@ -56,6 +56,8 @@ from diffusers.utils.hub_utils import load_or_create_model_card, populate_model_
 from diffusers.utils.import_utils import is_torch_npu_available, is_xformers_available
 from diffusers.utils.torch_utils import is_compiled_module
 
+import os
+os.environ['CURL_CA_BUNDLE'] = ''
 
 if is_wandb_available():
     import wandb
@@ -859,16 +861,21 @@ def main(args):
     # Load the tokenizers
     tokenizer_one = AutoTokenizer.from_pretrained(
         args.pretrained_model_name_or_path,
+        # pretrained_model_name_or_path = '/home/mayanze/PycharmProjects/sdxl_demo1/stable-diffusion-xl-base-1.0/tokenizer',
         subfolder="tokenizer",
         revision=args.revision,
         use_fast=False,
+        # local_files_only=True
     )
     tokenizer_two = AutoTokenizer.from_pretrained(
         args.pretrained_model_name_or_path,
+        # pretrained_model_name_or_path = '/home/mayanze/PycharmProjects/sdxl_demo1/stable-diffusion-xl-base-1.0/tokenizer_2',
         subfolder="tokenizer_2",
         revision=args.revision,
         use_fast=False,
+        # local_files_only=True
     )
+    # breakpoint()
 
     # import correct text encoder classes
     text_encoder_cls_one = import_model_class_from_model_name_or_path(

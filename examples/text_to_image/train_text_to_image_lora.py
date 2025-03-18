@@ -50,7 +50,7 @@ from diffusers.utils import check_min_version, convert_state_dict_to_diffusers, 
 from diffusers.utils.hub_utils import load_or_create_model_card, populate_model_card
 from diffusers.utils.import_utils import is_xformers_available
 from diffusers.utils.torch_utils import is_compiled_module
-
+from PIL import Image
 
 if is_wandb_available():
     import wandb
@@ -591,25 +591,37 @@ def main():
 
     # In distributed training, the load_dataset function guarantees that only one local process can concurrently
     # download the dataset.
-    if args.dataset_name is not None:
-        # Downloading and loading a dataset from the hub.
-        dataset = load_dataset(
-            args.dataset_name,
-            args.dataset_config_name,
-            cache_dir=args.cache_dir,
-            data_dir=args.train_data_dir,
+    # try:
+    #     dataset = load_dataset(
+    #     args.dataset_name,
+    #     args.dataset_config_name,
+    #     cache_dir=args.cache_dir,
+    #     )
+    # except Exception as e:
+    print('Using Local Dataset')
+    dataset = load_dataset(
+            'csv',
+            data_files=args.dataset_name,
         )
-    else:
-        data_files = {}
-        if args.train_data_dir is not None:
-            data_files["train"] = os.path.join(args.train_data_dir, "**")
-        dataset = load_dataset(
-            "imagefolder",
-            data_files=data_files,
-            cache_dir=args.cache_dir,
-        )
-        # See more about loading custom images at
-        # https://huggingface.co/docs/datasets/v2.4.0/en/image_load#imagefolder
+    # if args.dataset_name is not None:
+    #     # Downloading and loading a dataset from the hub.
+    #     dataset = load_dataset(
+    #         args.dataset_name,
+    #         args.dataset_config_name,
+    #         cache_dir=args.cache_dir,
+    #         data_dir=args.train_data_dir,
+    #     )
+    # else:
+    #     data_files = {}
+    #     if args.train_data_dir is not None:
+    #         data_files["train"] = os.path.join(args.train_data_dir, "**")
+    #     dataset = load_dataset(
+    #         "csv",
+    #         data_files= args.dataset_name,
+    #         # cache_dir=args.cache_dir,
+    #     )
+    #     # See more about loading custom images at
+    #     # https://huggingface.co/docs/datasets/v2.4.0/en/image_load#imagefolder
 
     # Preprocessing the datasets.
     # We need to tokenize inputs and targets.
@@ -670,7 +682,9 @@ def main():
         return model
 
     def preprocess_train(examples):
-        images = [image.convert("RGB") for image in examples[image_column]]
+        # images = [image.convert("RGB") for image in examples[image_column]]
+        images_path = examples[image_column]
+        images = [Image.open(image_path).convert("RGB") for image_path in images_path]
         examples["pixel_values"] = [train_transforms(image) for image in images]
         examples["input_ids"] = tokenize_captions(examples)
         return examples
@@ -932,6 +946,8 @@ def main():
     accelerator.wait_for_everyone()
     if accelerator.is_main_process:
         unet = unet.to(torch.float32)
+    #    for param in unet.parameters():
+    #         param.data = param.data.float() 
 
         unwrapped_unet = unwrap_model(unet)
         unet_lora_state_dict = convert_state_dict_to_diffusers(get_peft_model_state_dict(unwrapped_unet))
