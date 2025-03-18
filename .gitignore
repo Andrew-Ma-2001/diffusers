@@ -142,6 +142,7 @@ runs
 /examples/**/*.args
 /examples/rag/sweep
 
+
 # data
 /data
 serialization_dir
@@ -185,3 +186,6 @@ output/
 *.zip
 examples/controlnet/one_plane_label/
 examples/controlnet/plane/
+examples/controlnet/boat
+examples/controlnet/ocean
+examples/controlnet/ResizedImage
